@@ -1,0 +1,22 @@
+# .NET build output
+bin/
+obj/
+dist/
+*.user
+
+# Office lock / temp files
+~$*
+*.tmp
+
+# Season workbooks and generated files hold players' phone numbers - commit only the template
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.docx
+
+# OS / editor files
+Thumbs.db
+desktop.ini
+.vs/
+.vscode/

@@ -1,0 +1,1010 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Rpl.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Rpl">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid>
+        <Grid.Resources>
+            <Style x:Key="Card" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="18" />
+            </Style>
+            <Style x:Key="ColumnHead" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+            <Style x:Key="Chip" TargetType="Border">
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="Padding" Value="6,1" />
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="Kpi" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="16,12" />
+            </Style>
+            <Style x:Key="PageTitle" TargetType="TextBlock" BasedOn="{StaticResource SubtitleTextBlockStyle}">
+                <Setter Property="Margin" Value="0,0,0,4" />
+            </Style>
+            <Style x:Key="Hint" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorTertiaryBrush}" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+
+            <DataTemplate x:Key="BarTemplate" x:DataType="local:BarVm">
+                <Grid ColumnSpacing="10" Margin="0,3">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="190" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Label}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind Label}" />
+                    <Border Grid.Column="1" Width="{x:Bind TrackWidth}" Height="10" CornerRadius="5" VerticalAlignment="Center" Background="{ThemeResource SubtleFillColorSecondaryBrush}">
+                        <Rectangle Width="{x:Bind BarWidth}" Fill="{x:Bind Brush}" RadiusX="5" RadiusY="5" HorizontalAlignment="Left" />
+                    </Border>
+                    <TextBlock Grid.Column="2" Text="{x:Bind Value}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="StandingTemplate" x:DataType="local:StandingRow">
+                <Grid ColumnSpacing="8" Padding="0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="32" /><ColumnDefinition Width="*" /><ColumnDefinition Width="44" /><ColumnDefinition Width="44" /><ColumnDefinition Width="44" /><ColumnDefinition Width="44" /><ColumnDefinition Width="64" /><ColumnDefinition Width="50" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{x:Bind RankBrush}" Style="{StaticResource Chip}" MinWidth="24"><TextBlock Text="{x:Bind Rank}" FontWeight="Bold" HorizontalAlignment="Center" /></Border>
+                    <TextBlock Grid.Column="1" Text="{x:Bind Team}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{x:Bind Played}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{x:Bind Won}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="4" Text="{x:Bind Lost}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="5" Text="{x:Bind NoResult}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="6" Text="{x:Bind Nrr}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Grid.Column="7" Text="{x:Bind Points}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="StandingHeader">
+                <Grid ColumnSpacing="8" Padding="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="32" /><ColumnDefinition Width="*" /><ColumnDefinition Width="44" /><ColumnDefinition Width="44" /><ColumnDefinition Width="44" /><ColumnDefinition Width="44" /><ColumnDefinition Width="64" /><ColumnDefinition Width="50" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="#" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="1" Text="Team" Style="{StaticResource ColumnHead}" />
+                    <TextBlock Grid.Column="2" Text="P" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="3" Text="W" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="4" Text="L" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="5" Text="NR" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="6" Text="NRR" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="7" Text="Pts" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="DivisionTableTemplate" x:DataType="local:DivisionTable">
+                <StackPanel Margin="0,0,0,14">
+                    <TextBlock Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" />
+                    <ContentPresenter ContentTemplate="{StaticResource StandingHeader}" />
+                    <ItemsControl ItemsSource="{x:Bind Rows}" ItemTemplate="{StaticResource StandingTemplate}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="AwardTemplate" x:DataType="local:AwardRow">
+                <Grid ColumnSpacing="8" Padding="0,5">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="180" /><ColumnDefinition Width="60" /><ColumnDefinition Width="60" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Player}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Pom}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{x:Bind Total}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{x:Bind Titles}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="BattingTemplate" x:DataType="local:BattingRow">
+                <Grid ColumnSpacing="8" Padding="0,5">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="30" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="44" /><ColumnDefinition Width="54" /><ColumnDefinition Width="44" /><ColumnDefinition Width="54" /><ColumnDefinition Width="54" /></Grid.ColumnDefinitions>
+                    <Border Background="{x:Bind CapBrush}" Style="{StaticResource Chip}" MinWidth="22"><TextBlock Text="{x:Bind Rank}" FontWeight="Bold" HorizontalAlignment="Center" /></Border>
+                    <TextBlock Grid.Column="1" Text="{x:Bind Player}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{x:Bind Team}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Grid.Column="3" Text="{x:Bind Innings}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="4" Text="{x:Bind Runs}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="5" Text="{x:Bind Highest}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="6" Text="{x:Bind StrikeRate}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="7" Text="{x:Bind Average}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="BowlingTemplate" x:DataType="local:BowlingRow">
+                <Grid ColumnSpacing="8" Padding="0,5">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="30" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="50" /><ColumnDefinition Width="44" /><ColumnDefinition Width="50" /><ColumnDefinition Width="54" /><ColumnDefinition Width="54" /></Grid.ColumnDefinitions>
+                    <Border Background="{x:Bind CapBrush}" Style="{StaticResource Chip}" MinWidth="22"><TextBlock Text="{x:Bind Rank}" FontWeight="Bold" HorizontalAlignment="Center" /></Border>
+                    <TextBlock Grid.Column="1" Text="{x:Bind Player}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{x:Bind Team}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Grid.Column="3" Text="{x:Bind Overs}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="4" Text="{x:Bind Wickets}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="5" Text="{x:Bind Runs}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="6" Text="{x:Bind Economy}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="7" Text="{x:Bind Best}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="LeaderTemplate" x:DataType="local:LeaderRow">
+                <Grid ColumnSpacing="8" Padding="0,4">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="26" /><ColumnDefinition Width="*" /><ColumnDefinition Width="50" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Rank}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{x:Bind Value}" FontWeight="Bold" HorizontalAlignment="Right" />
+                </Grid>
+            </DataTemplate>
+        </Grid.Resources>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Background="{StaticResource RplMaroonBrush}" Padding="20,10" ColumnSpacing="14">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <Image x:Name="LogoImage" Width="54" Height="54" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="Ratnadeep Premier League" FontSize="22" FontWeight="SemiBold" Foreground="White" />
+                <TextBlock x:Name="SubtitleText" Foreground="{StaticResource RplGoldBrush}" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" RequestedTheme="Dark">
+                <TextBlock Text="Season" VerticalAlignment="Center" Foreground="White" />
+                <ComboBox x:Name="SeasonBox" MinWidth="96" SelectionChanged="Season_SelectionChanged" />
+                <Button x:Name="ImportButton" Click="Import_Click" ToolTipService.ToolTip="Read a season folder: players / accounts workbook, awards workbook and Match.docx">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8B5;" FontSize="14" /><TextBlock Text="Import season…" /></StackPanel>
+                </Button>
+                <DropDownButton x:Name="MoreButton">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE712;" FontSize="14" /><TextBlock Text="More" /></StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                            <MenuFlyoutItem Text="Start new season…" Click="NewSeason_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE787;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Import online registrations…" Click="ImportResponses_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8F4;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Backups and restore…" Click="Backups_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE81C;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem Text="Open data folder" Click="DataFolder_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE838;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+                <Button x:Name="GenerateButton" Click="Generate_Click" Background="{StaticResource RplGoldBrush}" Foreground="Black"
+                        ToolTipService.ToolTip="Excel, CSV, Word and PDF reports, registration form, schedules, certificates, ID cards, scorer sheets">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE9F9;" FontSize="14" /><TextBlock Text="Generate files…" FontWeight="SemiBold" /></StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <InfoBar x:Name="Status" Grid.Row="1" IsClosable="True" Margin="16,8,16,0" />
+
+        <NavigationView x:Name="Nav" Grid.Row="2" PaneDisplayMode="Left" IsSettingsVisible="False" IsBackButtonVisible="Collapsed"
+                        OpenPaneLength="200" SelectionChanged="Nav_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Dashboard" Tag="Dashboard" Icon="Home" />
+                <NavigationViewItem Content="Players" Tag="Players" Icon="People" IsSelected="True" />
+                <NavigationViewItem Content="Teams" Tag="Teams"><NavigationViewItem.Icon><FontIcon Glyph="&#xE902;" /></NavigationViewItem.Icon></NavigationViewItem>
+                <NavigationViewItem Content="Auction" Tag="Auction"><NavigationViewItem.Icon><FontIcon Glyph="&#xE8C7;" /></NavigationViewItem.Icon></NavigationViewItem>
+                <NavigationViewItem Content="Matches" Tag="Matches"><NavigationViewItem.Icon><FontIcon Glyph="&#xE787;" /></NavigationViewItem.Icon></NavigationViewItem>
+                <NavigationViewItem Content="Stats" Tag="Stats"><NavigationViewItem.Icon><FontIcon Glyph="&#xE9D9;" /></NavigationViewItem.Icon></NavigationViewItem>
+                <NavigationViewItem Content="Accounts" Tag="Accounts"><NavigationViewItem.Icon><FontIcon Glyph="&#xE825;" /></NavigationViewItem.Icon></NavigationViewItem>
+                <NavigationViewItem Content="Share &amp; print" Tag="Share"><NavigationViewItem.Icon><FontIcon Glyph="&#xE72D;" /></NavigationViewItem.Icon></NavigationViewItem>
+                <NavigationViewItem Content="Hall of fame" Tag="Fame"><NavigationViewItem.Icon><FontIcon Glyph="&#xE734;" /></NavigationViewItem.Icon></NavigationViewItem>
+                <NavigationViewItem Content="Season settings" Tag="Season"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" /></NavigationViewItem.Icon></NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <Grid Padding="16,12,16,16">
+
+                <!-- ============================== DASHBOARD ============================== -->
+                <ScrollViewer x:Name="DashboardPage" Visibility="Collapsed">
+                    <StackPanel Spacing="16" Margin="0,0,12,0">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="PLAYERS" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="KpiPlayers" Style="{StaticResource TitleLargeTextBlockStyle}" /><TextBlock x:Name="KpiPlayersSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                            <Border Grid.Column="1" Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="FEES COLLECTED" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="KpiFees" Style="{StaticResource TitleLargeTextBlockStyle}" /><TextBlock x:Name="KpiFeesSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                            <Border Grid.Column="2" Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="MATCHES" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="KpiMatches" Style="{StaticResource TitleLargeTextBlockStyle}" /><TextBlock x:Name="KpiMatchesSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                            <Border Grid.Column="3" Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="BALANCE" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="KpiBalance" Style="{StaticResource TitleLargeTextBlockStyle}" /><TextBlock x:Name="KpiBalanceSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                            <Border Grid.Column="4" Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="CASH CHECK" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="KpiCash" Style="{StaticResource TitleLargeTextBlockStyle}" /><TextBlock x:Name="KpiCashSub" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" /></StackPanel></Border>
+                        </Grid>
+                        <Border Style="{StaticResource Card}" Padding="16,12">
+                            <StackPanel Spacing="4">
+                                <TextBlock x:Name="NextTitle" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock x:Name="NextText" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                        <Grid ColumnSpacing="24">
+                            <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <ItemsControl x:Name="DashTables" ItemTemplate="{StaticResource DivisionTableTemplate}" />
+                                <TextBlock x:Name="DashNoResults" Text="Add match winners on the Matches page to fill the points table." TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                <TextBlock Text="Top performers" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,10,0,6" />
+                                <ItemsControl x:Name="DashAwards" ItemTemplate="{StaticResource AwardTemplate}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="16">
+                                <StackPanel><TextBlock Text="Players per team" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" /><ItemsControl x:Name="TeamBars" ItemTemplate="{StaticResource BarTemplate}" /></StackPanel>
+                                <StackPanel><TextBlock Text="Categories" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" /><ItemsControl x:Name="CategoryBars" ItemTemplate="{StaticResource BarTemplate}" /></StackPanel>
+                                <StackPanel><TextBlock Text="Players per block" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" /><ItemsControl x:Name="BlockBars" ItemTemplate="{StaticResource BarTemplate}" /></StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ============================== PLAYERS ============================== -->
+                <Grid x:Name="PlayersPage" ColumnSpacing="16">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="380" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Padding="0">
+                        <ScrollViewer Padding="18">
+                            <StackPanel Spacing="10" Margin="0,0,12,0">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="PlayerFormTitle" Text="Add player" Style="{StaticResource PageTitle}" VerticalAlignment="Center" />
+                                    <Button Grid.Column="1" Click="PPhoto_Click" Padding="0" ToolTipService.ToolTip="Photo for the ID card">
+                                        <Grid Width="56" Height="64">
+                                            <Image x:Name="PPhotoImage" Stretch="UniformToFill" />
+                                            <TextBlock x:Name="PPhotoHint" Text="Photo" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" />
+                                        </Grid>
+                                    </Button>
+                                </Grid>
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="100" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="PFormNo" Header="Form No" />
+                                    <TextBox x:Name="PName" Grid.Column="1" Header="Name *" PlaceholderText="First Last" />
+                                </Grid>
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="80" /><ColumnDefinition Width="80" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="PAge" Header="Age" InputScope="Number" />
+                                    <ComboBox x:Name="PBlock" Grid.Column="1" Header="Block" HorizontalAlignment="Stretch" />
+                                    <TextBox x:Name="PFlat" Grid.Column="2" Header="Flat No." PlaceholderText="802" />
+                                </Grid>
+                                <TextBox x:Name="PMobile" Header="Mobile" PlaceholderText="10 digits" InputScope="TelephoneNumber" MaxLength="10" />
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="PGender" Header="Gender" HorizontalAlignment="Stretch" SelectionChanged="PGender_SelectionChanged" />
+                                    <ComboBox x:Name="PCategory" Grid.Column="1" Header="Category" HorizontalAlignment="Stretch" PlaceholderText="A+ … D" />
+                                </Grid>
+                                <ComboBox x:Name="PTeam" Header="Team" HorizontalAlignment="Stretch" IsEditable="True" PlaceholderText="Pick or type a team" />
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="PPayment" Header="Fee" HorizontalAlignment="Stretch" />
+                                    <TextBox x:Name="PPaidTo" Grid.Column="1" Header="Paid to / via" PlaceholderText="Ruchik UPI" />
+                                </Grid>
+                                <TextBlock x:Name="PFeeNote" Style="{StaticResource Hint}" />
+                                <TextBox x:Name="PNotes" Header="Notes" />
+                                <CheckBox x:Name="PCancelled" Content="Form cancelled / withdrawn" />
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+                                    <Button x:Name="PSave" Style="{StaticResource AccentButtonStyle}" Content="Add player" Click="PSave_Click" MinWidth="110" />
+                                    <Button x:Name="PClear" Content="Clear" Click="PClear_Click" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}">
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <Grid ColumnSpacing="8" RowSpacing="8">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <TextBlock Text="Players" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                    <TextBlock x:Name="PlayerCount" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Bottom" Margin="0,0,0,3" />
+                                </StackPanel>
+                                <TextBox x:Name="PSearch" Grid.Column="1" PlaceholderText="Search name, flat, mobile" TextChanged="PFilter_Changed" Margin="12,0,0,0" />
+                                <Button x:Name="PEdit" Grid.Column="2" Click="PEdit_Click" IsEnabled="False" ToolTipService.ToolTip="Edit (or double-click a row)">
+                                    <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70F;" FontSize="14" /><TextBlock Text="Edit" /></StackPanel>
+                                </Button>
+                                <Button x:Name="PDelete" Grid.Column="3" Click="PDelete_Click" IsEnabled="False">
+                                    <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE74D;" FontSize="14" /><TextBlock Text="Delete" /></StackPanel>
+                                </Button>
+                                <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" Spacing="8">
+                                    <ComboBox x:Name="PDivisionFilter" Width="140" SelectionChanged="PFilter_Changed" />
+                                    <ComboBox x:Name="PTeamFilter" Width="220" SelectionChanged="PFilter_Changed" />
+                                    <ComboBox x:Name="PStatusFilter" Width="150" SelectionChanged="PFilter_Changed" />
+                                    <ComboBox x:Name="PSort" Width="140" SelectionChanged="PFilter_Changed" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Grid.Row="1" Padding="16,0" ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="32" /><ColumnDefinition Width="44" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="40" /><ColumnDefinition Width="70" /><ColumnDefinition Width="96" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="44" /><ColumnDefinition Width="70" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="No" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="1" Text="Form" Style="{StaticResource ColumnHead}" />
+                                <TextBlock Grid.Column="2" Text="Name" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="3" Text="Age" Style="{StaticResource ColumnHead}" />
+                                <TextBlock Grid.Column="4" Text="Flat" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="5" Text="Mobile" Style="{StaticResource ColumnHead}" />
+                                <TextBlock Grid.Column="6" Text="Team" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="7" Text="Cat." Style="{StaticResource ColumnHead}" />
+                                <TextBlock Grid.Column="8" Text="Fee" Style="{StaticResource ColumnHead}" />
+                            </Grid>
+                            <ListView x:Name="PlayerList" Grid.Row="2" SelectionMode="Single" SelectionChanged="PlayerList_SelectionChanged" DoubleTapped="PlayerList_DoubleTapped">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:PlayerRow">
+                                        <Grid ColumnSpacing="8" Padding="0,5" ToolTipService.ToolTip="{x:Bind Tooltip}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32" /><ColumnDefinition Width="44" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="40" /><ColumnDefinition Width="70" /><ColumnDefinition Width="96" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="44" /><ColumnDefinition Width="70" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind No}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind FormNo}" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" Opacity="{x:Bind NameOpacity}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{x:Bind Captain}" Foreground="{StaticResource RplGoldBrush}" FontWeight="SemiBold" FontSize="12" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="3" Text="{x:Bind Age}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="4" Text="{x:Bind Flat}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="5" Text="{x:Bind Mobile}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="6" Text="{x:Bind Team}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                            <Border Grid.Column="7" Background="{x:Bind CategoryBrush}" Style="{StaticResource Chip}"><TextBlock Text="{x:Bind Category}" Foreground="White" FontWeight="SemiBold" FontSize="12" /></Border>
+                                            <TextBlock Grid.Column="8" Text="{x:Bind Payment}" Foreground="{x:Bind PaymentBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ============================== TEAMS ============================== -->
+                <Grid x:Name="TeamsPage" ColumnSpacing="16" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="420" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}">
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <TextBlock Text="Teams this season" Style="{StaticResource PageTitle}" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Content="Balanced teams…" Click="Balance_Click" ToolTipService.ToolTip="Share players out by category so every team gets a similar mix" />
+                            </Grid>
+                            <TextBlock Grid.Row="1" Style="{StaticResource Hint}"
+                                       Text="Each team has a division (Men, Women, Kids) with its own league. Renaming a team updates every player and match; renaming it to an existing team's name merges the two." />
+                            <ListView x:Name="TeamList" Grid.Row="2" SelectionMode="Single" SelectionChanged="TeamList_SelectionChanged">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:TeamRow">
+                                        <StackPanel Padding="0,6" Spacing="2">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Border Background="{x:Bind DivisionBrush}" Style="{StaticResource Chip}"><TextBlock Text="{x:Bind Division}" Foreground="White" FontSize="11" FontWeight="SemiBold" /></Border>
+                                                <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="15" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <TextBlock Text="{x:Bind Players}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock Text="{x:Bind Captain}" Foreground="{StaticResource RplGoldBrush}" />
+                                                <TextBlock Text="{x:Bind Group}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <TextBlock Text="{x:Bind Mix}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                <TextBlock Text="{x:Bind Matches}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}">
+                        <Grid RowSpacing="10">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <TextBlock x:Name="TeamFormTitle" Text="Add team" Style="{StaticResource PageTitle}" />
+                            <Grid Grid.Row="1" ColumnSpacing="10">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="110" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <TextBox x:Name="TName" Header="Team name *" PlaceholderText="e.g. Royal Challengers Ratnadeep" />
+                                <ComboBox x:Name="TDivision" Grid.Column="1" Header="Division" HorizontalAlignment="Stretch" />
+                                <ComboBox x:Name="TCaptain" Grid.Column="2" Header="Captain" HorizontalAlignment="Stretch" IsEditable="True" PlaceholderText="Pick a player" />
+                                <TextBox x:Name="TGroup" Grid.Column="3" Header="Group (optional)" PlaceholderText="Apex" />
+                            </Grid>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="TSave" Style="{StaticResource AccentButtonStyle}" Content="Add team" Click="TSave_Click" MinWidth="110" />
+                                <Button Content="New team" Click="TNew_Click" />
+                                <Button x:Name="TDelete" Content="Delete team" Click="TDelete_Click" IsEnabled="False" />
+                            </StackPanel>
+                            <Grid Grid.Row="3" RowSpacing="6">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <TextBlock x:Name="SquadTitle" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <ListView x:Name="SquadList" Grid.Row="1" SelectionMode="None">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="local:PlayerRow">
+                                            <Grid ColumnSpacing="10" Padding="0,4">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="44" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="70" /><ColumnDefinition Width="100" /><ColumnDefinition Width="80" /></Grid.ColumnDefinitions>
+                                                <Border Background="{x:Bind CategoryBrush}" Style="{StaticResource Chip}"><TextBlock Text="{x:Bind Category}" Foreground="White" FontWeight="SemiBold" FontSize="12" /></Border>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                    <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{x:Bind Captain}" Foreground="{StaticResource RplGoldBrush}" FontWeight="SemiBold" FontSize="12" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Flat}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="3" Text="{x:Bind Mobile}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="4" Text="{x:Bind Payment}" Foreground="{x:Bind PaymentBrush}" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ============================== AUCTION ============================== -->
+                <Grid x:Name="AuctionPage" ColumnSpacing="16" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="460" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Padding="0">
+                        <ScrollViewer Padding="18">
+                            <StackPanel Spacing="12" Margin="0,0,12,0">
+                                <TextBlock Text="Player auction" Style="{StaticResource PageTitle}" />
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="ADivision" Header="Division" HorizontalAlignment="Stretch" SelectionChanged="AFilter_Changed" />
+                                    <ComboBox x:Name="ACategory" Grid.Column="1" Header="Category" HorizontalAlignment="Stretch" SelectionChanged="AFilter_Changed" />
+                                    <ComboBox x:Name="AOrder" Grid.Column="2" Header="Order" HorizontalAlignment="Stretch" />
+                                </Grid>
+                                <TextBlock x:Name="APoolText" Style="{StaticResource Hint}" />
+                                <Border Background="{StaticResource RplMaroonBrush}" CornerRadius="10" Padding="20,16">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="ON THE BLOCK" Foreground="{StaticResource RplGoldBrush}" FontWeight="Bold" FontSize="12" CharacterSpacing="200" />
+                                        <TextBlock x:Name="ABlockName" Text="Press Next player" Foreground="White" FontSize="30" FontWeight="Bold" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="ABlockInfo" Foreground="#F3E3C3" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Next player" Style="{StaticResource AccentButtonStyle}" Click="ANext_Click" />
+                                    <Button Content="Unsold – skip" Click="ASkip_Click" />
+                                    <Button x:Name="AUndo" Content="Undo last sale" Click="AUndo_Click" IsEnabled="False" />
+                                </StackPanel>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="150" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <NumberBox x:Name="ABid" Header="Bid" Minimum="0" SmallChange="50" SpinButtonPlacementMode="Inline" />
+                                    <Button Grid.Column="1" Content="+50" VerticalAlignment="Bottom" Click="ABidUp_Click" Tag="50" />
+                                    <Button Grid.Column="2" Content="+100" VerticalAlignment="Bottom" Click="ABidUp_Click" Tag="100" />
+                                    <Button Grid.Column="3" Content="+200" VerticalAlignment="Bottom" Click="ABidUp_Click" Tag="200" />
+                                </Grid>
+                                <TextBlock Text="Sold to (click the team):" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <ItemsControl x:Name="ATeamButtons">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="205" ItemHeight="64" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:AuctionTeam">
+                                            <Button Margin="0,0,8,8" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="ASell_Click" Tag="{x:Bind Name}">
+                                                <StackPanel>
+                                                    <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{x:Bind PurseText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource RplGoldBrush}" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Style="{StaticResource Hint}" Text="Purse and base prices are in Season settings. Captains are not auctioned. Selling sets the player's team and price." />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}">
+                        <Grid RowSpacing="10">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <TextBlock Text="Teams" Style="{StaticResource PageTitle}" />
+                            <ItemsControl x:Name="ATeamSummary" Grid.Row="1">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:AuctionTeam">
+                                        <Grid ColumnSpacing="10" Padding="0,4">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="90" /><ColumnDefinition Width="110" /><ColumnDefinition Width="100" /><ColumnDefinition Width="2*" /></Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Players}" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Spent}" />
+                                            <TextBlock Grid.Column="3" Text="{x:Bind PurseText}" Foreground="{StaticResource RplGoldBrush}" FontWeight="SemiBold" />
+                                            <TextBlock Grid.Column="4" Text="{x:Bind Mix}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Grid.Row="2" Text="Sold" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,8,0,0" />
+                            <ListView x:Name="ASoldList" Grid.Row="3" SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:SoldRow">
+                                        <Grid ColumnSpacing="10" Padding="0,3">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="44" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="80" /></Grid.ColumnDefinitions>
+                                            <Border Background="{x:Bind CategoryBrush}" Style="{StaticResource Chip}"><TextBlock Text="{x:Bind Category}" Foreground="White" FontSize="12" FontWeight="SemiBold" /></Border>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Team}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="3" Text="{x:Bind Price}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ============================== MATCHES ============================== -->
+                <Grid x:Name="MatchesPage" ColumnSpacing="16" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="400" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Padding="0">
+                        <ScrollViewer Padding="18">
+                            <StackPanel Spacing="10" Margin="0,0,12,0">
+                                <TextBlock x:Name="MatchFormTitle" Text="Add match" Style="{StaticResource PageTitle}" />
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="70" /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <NumberBox x:Name="MNo" Header="No" Minimum="1" SpinButtonPlacementMode="Hidden" />
+                                    <CalendarDatePicker x:Name="MDate" Grid.Column="1" Header="Date" HorizontalAlignment="Stretch" DateFormat="{}{day.integer} {month.abbreviated} {year.full}" />
+                                    <ComboBox x:Name="MTime" Grid.Column="2" Header="Time" IsEditable="True" HorizontalAlignment="Stretch" />
+                                </Grid>
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="MDivision" Header="Division" HorizontalAlignment="Stretch" SelectionChanged="MDivision_Changed" />
+                                    <ComboBox x:Name="MStage" Grid.Column="1" Header="Stage" HorizontalAlignment="Stretch" />
+                                </Grid>
+                                <ComboBox x:Name="MTeamA" Header="Team A *" IsEditable="True" HorizontalAlignment="Stretch" SelectionChanged="MTeams_Changed" TextSubmitted="MTeams_TextSubmitted" />
+                                <Grid ColumnSpacing="6">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <NumberBox x:Name="MRunsA" Header="Runs" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <NumberBox x:Name="MWktsA" Grid.Column="1" Header="Wickets" Minimum="0" Maximum="11" SpinButtonPlacementMode="Hidden" />
+                                    <TextBox x:Name="MOversA" Grid.Column="2" Header="Overs" PlaceholderText="8.3" />
+                                </Grid>
+                                <ComboBox x:Name="MTeamB" Header="Team B *" IsEditable="True" HorizontalAlignment="Stretch" SelectionChanged="MTeams_Changed" TextSubmitted="MTeams_TextSubmitted" />
+                                <Grid ColumnSpacing="6">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <NumberBox x:Name="MRunsB" Header="Runs" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <NumberBox x:Name="MWktsB" Grid.Column="1" Header="Wickets" Minimum="0" Maximum="11" SpinButtonPlacementMode="Hidden" />
+                                    <TextBox x:Name="MOversB" Grid.Column="2" Header="Overs" PlaceholderText="10" />
+                                </Grid>
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="MWinner" Header="Winner" HorizontalAlignment="Stretch" PlaceholderText="Not played yet" />
+                                    <TextBox x:Name="MResult" Grid.Column="1" Header="Result (optional)" PlaceholderText="won by 12 runs" />
+                                </Grid>
+                                <TextBlock Text="Awards" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,6,0,0" />
+                                <Grid ColumnSpacing="8" RowSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                                    <AutoSuggestBox x:Name="MAward1" PlaceholderText="Player of the Match" TextChanged="MAward_TextChanged" />
+                                    <ComboBox x:Name="MTitle1" Grid.Column="1" IsEditable="True" HorizontalAlignment="Stretch" />
+                                    <AutoSuggestBox x:Name="MAward2" Grid.Row="1" PlaceholderText="Player" TextChanged="MAward_TextChanged" />
+                                    <ComboBox x:Name="MTitle2" Grid.Row="1" Grid.Column="1" IsEditable="True" HorizontalAlignment="Stretch" />
+                                    <AutoSuggestBox x:Name="MAward3" Grid.Row="2" PlaceholderText="Player" TextChanged="MAward_TextChanged" />
+                                    <ComboBox x:Name="MTitle3" Grid.Row="2" Grid.Column="1" IsEditable="True" HorizontalAlignment="Stretch" />
+                                    <AutoSuggestBox x:Name="MAward4" Grid.Row="3" PlaceholderText="Player" TextChanged="MAward_TextChanged" />
+                                    <ComboBox x:Name="MTitle4" Grid.Row="3" Grid.Column="1" IsEditable="True" HorizontalAlignment="Stretch" />
+                                </Grid>
+                                <TextBlock Style="{StaticResource Hint}" Text="Scores give the net run rate. Player runs and wickets go in the Scorecard (select a match, then Scorecard…)." />
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+                                    <Button x:Name="MSave" Style="{StaticResource AccentButtonStyle}" Content="Add match" Click="MSave_Click" MinWidth="110" />
+                                    <Button x:Name="MClear" Content="Clear" Click="MClear_Click" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Padding="18,8,18,18">
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <SelectorBar x:Name="MatchTabs" SelectionChanged="MatchTabs_SelectionChanged">
+                                    <SelectorBarItem x:Name="FixturesTab" Text="Fixtures &amp; results" IsSelected="True" />
+                                    <SelectorBarItem x:Name="PointsTab" Text="Points tables" />
+                                    <SelectorBarItem x:Name="AwardsTab" Text="Awards" />
+                                </SelectorBar>
+                                <Button Grid.Column="1" Click="Fixtures_Click" ToolTipService.ToolTip="Every team plays every other once, in rounds; no team plays twice in a night">
+                                    <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE8F4;" FontSize="14" /><TextBlock Text="League fixtures…" /></StackPanel>
+                                </Button>
+                                <Button Grid.Column="2" Content="Playoffs…" Click="Playoffs_Click" ToolTipService.ToolTip="Qualifier 1, Eliminator, Qualifier 2 and Final from the top 4" />
+                                <Button x:Name="MScorecard" Grid.Column="3" Content="Scorecard…" Click="Scorecard_Click" IsEnabled="False" ToolTipService.ToolTip="Runs, balls, overs and wickets for each player" />
+                                <Button x:Name="MAvailability" Grid.Column="4" Content="Availability…" Click="Availability_Click" IsEnabled="False" ToolTipService.ToolTip="Mark players who can't play this match" />
+                                <Button x:Name="MEdit" Grid.Column="5" Click="MEdit_Click" IsEnabled="False"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70F;" FontSize="14" /><TextBlock Text="Edit" /></StackPanel></Button>
+                                <Button x:Name="MDelete" Grid.Column="6" Click="MDelete_Click" IsEnabled="False"><FontIcon Glyph="&#xE74D;" FontSize="14" /></Button>
+                            </Grid>
+                            <InfoBar x:Name="FixtureWarning" Grid.Row="1" Severity="Warning" IsClosable="False" Title="Fixture check" />
+
+                            <Grid x:Name="FixturesPanel" Grid.Row="2" RowSpacing="6">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <Grid Padding="16,0" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="30" /><ColumnDefinition Width="90" /><ColumnDefinition Width="72" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="110" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <TextBlock Text="No" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="1" Text="Date" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="2" Text="Time" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="3" Text="Match" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="4" Text="Stage" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="5" Text="Result" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="6" Text="POM" Style="{StaticResource ColumnHead}" />
+                                </Grid>
+                                <ListView x:Name="MatchList" Grid.Row="1" SelectionMode="Single" SelectionChanged="MatchList_SelectionChanged" DoubleTapped="MatchList_DoubleTapped">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="local:MatchRow">
+                                            <Grid ColumnSpacing="8" Padding="0,5">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="30" /><ColumnDefinition Width="90" /><ColumnDefinition Width="72" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="110" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{x:Bind No}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Date}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Time}" VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                                    <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind Title}" />
+                                                    <TextBlock Text="{x:Bind Extra}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource RplGoldBrush}" />
+                                                </StackPanel>
+                                                <Border Grid.Column="4" Background="{x:Bind StageBrush}" Style="{StaticResource Chip}"><TextBlock Text="{x:Bind Stage}" Foreground="{x:Bind StageText}" FontSize="12" FontWeight="SemiBold" /></Border>
+                                                <TextBlock Grid.Column="5" Text="{x:Bind Result}" Opacity="{x:Bind ResultOpacity}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind Result}" />
+                                                <TextBlock Grid.Column="6" Text="{x:Bind Pom}" Foreground="{StaticResource RplGoldBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>
+
+                            <ScrollViewer x:Name="PointsPanel" Grid.Row="2" Visibility="Collapsed">
+                                <StackPanel Margin="0,0,12,0">
+                                    <ItemsControl x:Name="PointsTables" ItemTemplate="{StaticResource DivisionTableTemplate}" />
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0"
+                                               Text="League matches with a winner: 2 points a win, 1 each for no result. Level on points: net run rate (from the scores), then wins. Top 4 (gold) go to the playoffs." />
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <ScrollViewer x:Name="AwardsPanel" Grid.Row="2" Visibility="Collapsed">
+                                <StackPanel Margin="0,0,12,0">
+                                    <Grid ColumnSpacing="8" Padding="0,0,0,4">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="180" /><ColumnDefinition Width="60" /><ColumnDefinition Width="60" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Player" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="1" Text="POM" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="Awards" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="3" Text="Titles" Style="{StaticResource ColumnHead}" />
+                                    </Grid>
+                                    <ItemsControl x:Name="AwardList" ItemTemplate="{StaticResource AwardTemplate}" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ============================== STATS ============================== -->
+                <Grid x:Name="StatsPage" RowSpacing="12" Visibility="Collapsed">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Batting and bowling" Style="{StaticResource PageTitle}" VerticalAlignment="Center" />
+                        <ComboBox x:Name="StatsDivision" Width="130" SelectionChanged="StatsDivision_Changed" />
+                        <TextBlock x:Name="StatsHint" Style="{StaticResource Hint}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Grid Grid.Row="1" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource Card}">
+                            <Grid RowSpacing="6">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <TextBlock Text="Most runs – Orange Cap" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="#EA580C" />
+                                <Grid Grid.Row="1" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="30" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="44" /><ColumnDefinition Width="54" /><ColumnDefinition Width="44" /><ColumnDefinition Width="54" /><ColumnDefinition Width="54" /></Grid.ColumnDefinitions>
+                                    <TextBlock Text="#" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="1" Text="Player" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="2" Text="Team" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="3" Text="Inns" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="4" Text="Runs" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="5" Text="HS" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="6" Text="SR" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="7" Text="Avg" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                                </Grid>
+                                <ListView x:Name="BattingList" Grid.Row="2" SelectionMode="None" ItemTemplate="{StaticResource BattingTemplate}" />
+                            </Grid>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource Card}">
+                            <Grid RowSpacing="6">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <TextBlock Text="Most wickets – Purple Cap" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="#A855F7" />
+                                <Grid Grid.Row="1" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="30" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="50" /><ColumnDefinition Width="44" /><ColumnDefinition Width="50" /><ColumnDefinition Width="54" /><ColumnDefinition Width="54" /></Grid.ColumnDefinitions>
+                                    <TextBlock Text="#" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="1" Text="Player" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="2" Text="Team" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="3" Text="Overs" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="4" Text="Wkts" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="5" Text="Runs" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" /><TextBlock Grid.Column="6" Text="Econ" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="7" Text="Best" Style="{StaticResource ColumnHead}" HorizontalAlignment="Center" />
+                                </Grid>
+                                <ListView x:Name="BowlingList" Grid.Row="2" SelectionMode="None" ItemTemplate="{StaticResource BowlingTemplate}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- ============================== ACCOUNTS ============================== -->
+                <Grid x:Name="AccountsPage" RowSpacing="12" Visibility="Collapsed">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="FEES COLLECTED" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="AFees" FontSize="24" FontWeight="SemiBold" /><TextBlock x:Name="AFeesSub" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" /></StackPanel></Border>
+                        <Border Grid.Column="1" Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="PENDING" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="APending" FontSize="24" FontWeight="SemiBold" /><TextBlock x:Name="APendingSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                        <Border Grid.Column="2" Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="SPONSORS" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="ASponsors" FontSize="24" FontWeight="SemiBold" /><TextBlock x:Name="ASponsorsSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                        <Border Grid.Column="3" Style="{StaticResource Kpi}"><StackPanel><TextBlock Text="EXPENSES" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="AExpenses" FontSize="24" FontWeight="SemiBold" /><TextBlock x:Name="AExpensesSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                        <Border Grid.Column="4" Style="{StaticResource Kpi}" Background="{ThemeResource AccentFillColorTertiaryBrush}"><StackPanel><TextBlock Text="BALANCE" Style="{StaticResource ColumnHead}" /><TextBlock x:Name="ABalance" FontSize="24" FontWeight="Bold" /><TextBlock x:Name="ABalanceSub" Style="{StaticResource CaptionTextBlockStyle}" /></StackPanel></Border>
+                    </Grid>
+                    <Border Grid.Row="1" Style="{StaticResource Card}" Padding="18,8,18,18">
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <SelectorBar x:Name="AccountTabs" SelectionChanged="AccountTabs_SelectionChanged">
+                                <SelectorBarItem x:Name="FeesTab" Text="Fees" IsSelected="True" />
+                                <SelectorBarItem x:Name="SponsorsTab" Text="Sponsors" />
+                                <SelectorBarItem x:Name="ExpensesTab" Text="Expenses" />
+                                <SelectorBarItem x:Name="CashTab" Text="Cash count" />
+                            </SelectorBar>
+                            <Grid x:Name="FeesPanel" Grid.Row="1" RowSpacing="8">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <ComboBox x:Name="FeeFilter" Width="160" SelectionChanged="FeeFilter_Changed" />
+                                    <TextBlock Text="Selected players:" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                    <Button Content="Paid online" Click="MarkOnline_Click" />
+                                    <Button Content="Paid cash" Click="MarkCash_Click" />
+                                    <Button Content="Pending" Click="MarkPending_Click" />
+                                    <Button Content="Waived" Click="MarkWaived_Click" />
+                                    <TextBlock x:Name="FeeHint" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource Hint}" />
+                                </StackPanel>
+                                <ListView x:Name="FeeList" Grid.Row="1" SelectionMode="Extended">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="local:PlayerRow">
+                                            <Grid ColumnSpacing="10" Padding="0,4">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="44" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="80" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{x:Bind FormNo}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Team}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="3" Text="{x:Bind Payment}" Foreground="{x:Bind PaymentBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="4" Text="{x:Bind PaidTo}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>
+                            <Grid x:Name="SponsorsPanel" Grid.Row="1" RowSpacing="8" Visibility="Collapsed">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="120" /><ColumnDefinition Width="110" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="SName" Header="Sponsor *" />
+                                    <NumberBox x:Name="SAmount" Grid.Column="1" Header="Amount ₹" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <ComboBox x:Name="SMode" Grid.Column="2" Header="Mode" HorizontalAlignment="Stretch" />
+                                    <TextBox x:Name="SNotes" Grid.Column="3" Header="Notes" />
+                                    <Button x:Name="SSave" Grid.Column="4" Content="Add" Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Bottom" Click="SSave_Click" MinWidth="80" />
+                                    <Button Grid.Column="5" Content="Clear" VerticalAlignment="Bottom" Click="SClear_Click" />
+                                    <Button Grid.Column="6" Content="Delete" VerticalAlignment="Bottom" Click="SDelete_Click" />
+                                </Grid>
+                                <ListView x:Name="SponsorList" Grid.Row="1" SelectionMode="Single" SelectionChanged="SponsorList_SelectionChanged">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="local:SponsorRow">
+                                            <Grid ColumnSpacing="10" Padding="0,4">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="100" /><ColumnDefinition Width="80" /><ColumnDefinition Width="2*" /></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Amount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Mode}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="3" Text="{x:Bind Notes}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>
+                            <Grid x:Name="ExpensesPanel" Grid.Row="1" RowSpacing="8" Visibility="Collapsed">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /><ColumnDefinition Width="100" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="EItem" Header="Expense *" PlaceholderText="Ball, Trophy…" />
+                                    <ComboBox x:Name="EPaidBy" Grid.Column="1" Header="Paid by" IsEditable="True" HorizontalAlignment="Stretch" />
+                                    <NumberBox x:Name="EAmount" Grid.Column="2" Header="Amount ₹" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <ComboBox x:Name="EMode" Grid.Column="3" Header="Mode" HorizontalAlignment="Stretch" />
+                                    <CheckBox x:Name="EPaid" Grid.Column="4" Content="Paid" IsChecked="True" VerticalAlignment="Bottom" MinWidth="70" />
+                                    <TextBox x:Name="ENotes" Grid.Column="5" Header="Notes" />
+                                    <Button x:Name="ESave" Grid.Column="6" Content="Add" Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Bottom" Click="ESave_Click" MinWidth="80" />
+                                    <Button Grid.Column="7" Content="Clear" VerticalAlignment="Bottom" Click="EClear_Click" />
+                                    <Button Grid.Column="8" Content="Delete" VerticalAlignment="Bottom" Click="EDelete_Click" />
+                                </Grid>
+                                <ListView x:Name="ExpenseList" Grid.Row="1" SelectionMode="Single" SelectionChanged="ExpenseList_SelectionChanged">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="local:ExpenseRow">
+                                            <Grid ColumnSpacing="10" Padding="0,4">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="100" /><ColumnDefinition Width="70" /><ColumnDefinition Width="80" /><ColumnDefinition Width="2*" /></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{x:Bind Item}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind PaidBy}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Amount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="3" Text="{x:Bind Mode}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="4" Text="{x:Bind Paid}" Foreground="{x:Bind PaidBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="5" Text="{x:Bind Notes}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>
+                            <ScrollViewer x:Name="CashPanel" Grid.Row="1" Visibility="Collapsed">
+                                <Grid ColumnSpacing="32" Margin="0,8,12,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <StackPanel x:Name="CashInputs" Spacing="6" />
+                                    <StackPanel Grid.Column="1" Spacing="10" MaxWidth="460" HorizontalAlignment="Left">
+                                        <TextBlock Text="Cash check" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                        <TextBlock x:Name="CashExpectedText" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="CashCountedText" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="CashDiffText" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" />
+                                        <TextBlock Style="{StaticResource Hint}" Text="Should be in hand = fees paid in cash + sponsors paid in cash – expenses paid in cash. Type how many of each note you have; it saves as you type." />
+                                    </StackPanel>
+                                </Grid>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ============================== SHARE & PRINT ============================== -->
+                <Grid x:Name="SharePage" ColumnSpacing="16" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="460" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <ScrollViewer>
+                        <StackPanel Spacing="12" Margin="0,0,12,0">
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="WhatsApp posters" Style="{StaticResource PageTitle}" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="1080 × 1350 images in RPL colours. Copy and paste straight into WhatsApp (desktop or web), or save." />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                        <CalendarDatePicker x:Name="PosterDate" Header="Match day" HorizontalAlignment="Stretch" />
+                                        <Button Grid.Column="1" Content="Make poster" VerticalAlignment="Bottom" Click="PosterFixtures_Click" />
+                                    </Grid>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="PosterMatch" Header="Match result" HorizontalAlignment="Stretch" />
+                                        <Button Grid.Column="1" Content="Make poster" VerticalAlignment="Bottom" Click="PosterResult_Click" />
+                                    </Grid>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="PosterDivision" Header="Points table" HorizontalAlignment="Stretch" />
+                                        <Button Grid.Column="1" Content="Make poster" VerticalAlignment="Bottom" Click="PosterPoints_Click" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Print" Style="{StaticResource PageTitle}" />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                        <CalendarDatePicker x:Name="ScorerDate" Header="Scorer's sheets for" HorizontalAlignment="Stretch" />
+                                        <Button Grid.Column="1" Content="Make PDF" VerticalAlignment="Bottom" Click="ScorerSheets_Click" />
+                                    </Grid>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="IdCardWho" Header="Player ID cards" HorizontalAlignment="Stretch" />
+                                        <Button Grid.Column="1" Content="Make PDF" VerticalAlignment="Bottom" Click="IdCards_Click" />
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <CheckBox x:Name="CertMatch" Content="Match awards" IsChecked="True" />
+                                        <CheckBox x:Name="CertSeason" Content="Season awards" IsChecked="True" />
+                                        <Button Content="Certificates PDF" Click="Certificates_Click" />
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Hint}" Text="Season awards: Man of the Series (Season settings), Orange and Purple Cap (from scorecards), Champions and Runners-up (from the Final's winner)." />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <Grid Grid.Column="1" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Poster preview" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <Border Width="324" Height="405" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Image x:Name="PosterImage" Stretch="Uniform" />
+                                </Border>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="PosterCopy" Content="Copy image" Click="PosterCopy_Click" IsEnabled="False" Style="{StaticResource AccentButtonStyle}" />
+                                    <Button x:Name="PosterSave" Content="Save as…" Click="PosterSave_Click" IsEnabled="False" />
+                                    <Button Content="Posters folder" Click="PosterFolder_Click" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource Card}">
+                            <Grid RowSpacing="8">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="ReminderTitle" Text="Fee reminders" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                                    <Button Grid.Column="1" Content="Copy group message" Click="CopyGroupReminder_Click" ToolTipService.ToolTip="One message listing everyone who hasn't paid, for the residency group" />
+                                </Grid>
+                                <TextBlock Grid.Row="1" Style="{StaticResource Hint}" Text="WhatsApp opens a chat with the reminder already typed (message and UPI ID in Season settings)." />
+                                <ListView x:Name="ReminderList" Grid.Row="2" SelectionMode="None">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="local:ReminderRow">
+                                            <Grid ColumnSpacing="8" Padding="0,4">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="100" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{x:Bind Team}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Mobile}" VerticalAlignment="Center" />
+                                                <Button Grid.Column="2" Content="WhatsApp" IsEnabled="{x:Bind HasMobile}" Click="WhatsApp_Click" Tag="{x:Bind Message}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- ============================== HALL OF FAME ============================== -->
+                <ScrollViewer x:Name="FamePage" Visibility="Collapsed">
+                    <StackPanel Spacing="14" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="Hall of fame – every season" Style="{StaticResource PageTitle}" VerticalAlignment="Center" />
+                            <Button Content="Save as PDF…" Click="FamePdf_Click" />
+                        </StackPanel>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Spacing="6">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="60" /><ColumnDefinition Width="70" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <TextBlock Text="Season" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="1" Text="Division" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="2" Text="Champions" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="3" Text="Runners-up" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="4" Text="Man of the Series" Style="{StaticResource ColumnHead}" /><TextBlock Grid.Column="5" Text="Most runs" Style="{StaticResource ColumnHead}" />
+                                    <TextBlock Grid.Column="6" Text="Most wickets" Style="{StaticResource ColumnHead}" />
+                                </Grid>
+                                <ItemsControl x:Name="HonoursList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:HonourRow">
+                                            <Grid ColumnSpacing="8" Padding="0,5">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="60" /><ColumnDefinition Width="70" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{x:Bind Year}" FontWeight="Bold" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Division}" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Champions}" FontWeight="SemiBold" Foreground="{StaticResource RplGoldBrush}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="3" Text="{x:Bind RunnersUp}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="4" Text="{x:Bind ManOfSeries}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="5" Text="{x:Bind TopScorer}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="6" Text="{x:Bind TopWicketTaker}" TextTrimming="CharacterEllipsis" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Style="{StaticResource Hint}" Text="Champions and runners-up come from each division's Final (stage Final with a winner). Man of the Series is set in Season settings." />
+                            </StackPanel>
+                        </Border>
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Most Player of the Match" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" /><ItemsControl x:Name="FamePom" ItemTemplate="{StaticResource LeaderTemplate}" /></StackPanel></Border>
+                            <Border Grid.Column="1" Style="{StaticResource Card}"><StackPanel><TextBlock Text="Most runs" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" /><ItemsControl x:Name="FameRuns" ItemTemplate="{StaticResource LeaderTemplate}" /></StackPanel></Border>
+                            <Border Grid.Column="2" Style="{StaticResource Card}"><StackPanel><TextBlock Text="Most wickets" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" /><ItemsControl x:Name="FameWickets" ItemTemplate="{StaticResource LeaderTemplate}" /></StackPanel></Border>
+                            <Border Grid.Column="3" Style="{StaticResource Card}"><StackPanel><TextBlock Text="Most titles" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,0,6" /><ItemsControl x:Name="FameTitles" ItemTemplate="{StaticResource LeaderTemplate}" /></StackPanel></Border>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ============================== SEASON SETTINGS ============================== -->
+                <ScrollViewer x:Name="SeasonPage" Visibility="Collapsed">
+                    <StackPanel Spacing="14" MaxWidth="1000" HorizontalAlignment="Left" Margin="0,0,16,0">
+                        <TextBlock x:Name="SeasonTitle" Style="{StaticResource PageTitle}" />
+                        <Border Style="{StaticResource Card}">
+                            <Grid ColumnSpacing="12" RowSpacing="12">
+                                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                                <NumberBox x:Name="SetFee" Header="Registration fee per player (₹)" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="50" LargeChange="100" />
+                                <CalendarDatePicker x:Name="SetDeadline" Grid.Column="1" Header="Form deadline" HorizontalAlignment="Stretch" />
+                                <CalendarDatePicker x:Name="SetStart" Grid.Column="2" Header="League starts" HorizontalAlignment="Stretch" />
+                                <CalendarDatePicker x:Name="SetEnd" Grid.Column="3" Header="League ends" HorizontalAlignment="Stretch" />
+                                <TextBox x:Name="SetC1Name" Grid.Row="1" Header="Contact 1 name" />
+                                <TextBox x:Name="SetC1Phone" Grid.Row="1" Grid.Column="1" Header="Contact 1 mobile" />
+                                <TextBox x:Name="SetC2Name" Grid.Row="1" Grid.Column="2" Header="Contact 2 name" />
+                                <TextBox x:Name="SetC2Phone" Grid.Row="1" Grid.Column="3" Header="Contact 2 mobile" />
+                                <TextBox x:Name="SetTagline" Grid.Row="2" Header="Tagline" PlaceholderText="PLAY BOLD" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Style="{StaticResource Hint}"
+                                           Text="Only men pay the fee (as on the form); women and kids play free. Changing the fee updates every total, the reports and the registration form." />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Online registration, reminders and awards" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <Grid ColumnSpacing="12" RowSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                                    <TextBox x:Name="SetRegUrl" Header="Online registration link (Google Form) – printed as a QR code on the form" PlaceholderText="https://forms.gle/…" />
+                                    <TextBox x:Name="SetUpi" Grid.Column="1" Header="UPI ID for fee payments" PlaceholderText="name@okhdfcbank" />
+                                    <TextBox x:Name="SetReminder" Grid.Row="1" Grid.ColumnSpan="2" Header="WhatsApp fee reminder – {name} {fee} {deadline} {year} {upi} are filled in" AcceptsReturn="True" TextWrapping="Wrap" />
+                                    <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                        <TextBox x:Name="SetMosMen" Header="Man of the Series – Men" />
+                                        <TextBox x:Name="SetMosWomen" Grid.Column="1" Header="Player of the Series – Women" />
+                                        <TextBox x:Name="SetMosKids" Grid.Column="2" Header="Player of the Series – Kids" />
+                                    </Grid>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Auction" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="1.4*" /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <NumberBox x:Name="SetPurse" Header="Purse per team (points)" Minimum="0" SmallChange="500" SpinButtonPlacementMode="Inline" />
+                                    <NumberBox x:Name="SetBaseAp" Grid.Column="1" Header="A+ base" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <NumberBox x:Name="SetBaseA" Grid.Column="2" Header="A base" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <NumberBox x:Name="SetBaseB" Grid.Column="3" Header="B base" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <NumberBox x:Name="SetBaseC" Grid.Column="4" Header="C base" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                    <NumberBox x:Name="SetBaseD" Grid.Column="5" Header="D base" Minimum="0" SpinButtonPlacementMode="Hidden" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Registration form rules" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Style="{StaticResource Hint}" Text="One rule per line. {fee}, {deadline}, {start} and {end} are filled in from the settings above (in Gujarati digits on the Gujarati page). Edit freely for the season; 'Reset to generated rules' brings back the standard set." />
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="SetRulesEn" Header="English" AcceptsReturn="True" TextWrapping="Wrap" Height="300" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                    <TextBox x:Name="SetRulesGu" Grid.Column="1" Header="ગુજરાતી" AcceptsReturn="True" TextWrapping="Wrap" Height="300" FontFamily="Nirmala UI" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                </Grid>
+                                <Button Content="Reset to generated rules" Click="ResetRules_Click" />
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Save settings" Style="{StaticResource AccentButtonStyle}" Click="SaveSettings_Click" MinWidth="130" />
+                            <Button Content="Preview registration form" Click="PreviewForm_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </NavigationView>
+    </Grid>
+</Window>
